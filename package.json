@@ -1,0 +1,16 @@
+{
+  "name": "interpro-viz",
+  "version": "1.0.0",
+  "description": "Endolysin protein visualization tool",
+  "type": "module",
+  "scripts": {
+    "generate": "node generate-protein.mjs"
+  },
+  "keywords": [
+    "protein",
+    "visualization",
+    "interpro"
+  ],
+  "author": "",
+  "license": "MIT"
+}

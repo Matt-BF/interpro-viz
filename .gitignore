@@ -1,0 +1,7 @@
+# Dependencies
+node_modules/
+
+# Generated visualization artifacts
+output/
+
+.DS_Store
