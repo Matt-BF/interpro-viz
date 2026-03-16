@@ -1,8 +1,13 @@
-# Endolysin Protein Domain Visualization
+# DISCLAIMER
+This repo is almost entirely vibe-coded and it's main use-case was to batch generation of initial visualization files for a manuscript figure and to be subsequently edited. I have checked for my use case that the generated outputs are correct according to the input jsonl, but please double-check if you use this for your own data.
 
-This tool generates interactive HTML and publication-ready SVG visualizations of InterProScan results for endolysin proteins.
+# Protein Domain Visualization
+
+This tool generates interactive HTML and publication-ready SVG visualizations of InterProScan results, either generated through the InterProScan web service, or from the results of running InterProScan6 (nextflow pipeline).
 
 ## Installation
+
+First install dependencies with the package manager of your choice (pnpm, npm, yarn, bun). E.g. with pnpm:
 
 ```bash
 pnpm install
