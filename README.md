@@ -18,22 +18,22 @@ pnpm install
 Generate both HTML (interactive) and SVG (publication-ready) files:
 
 ```bash
-pnpm generate "protein-id-here"
+pnpm generate "protein-id-here" --jsonl /path/to/interpro_results.jsonl
 ```
 
 Generate only SVG:
 ```bash
-pnpm generate "protein-id-here" --svg-only
+pnpm generate "protein-id-here" --jsonl /path/to/interpro_results.jsonl --svg-only
 ```
 
 Generate only HTML:
 ```bash
-pnpm generate "protein-id-here" --html-only
+pnpm generate "protein-id-here" --jsonl /path/to/interpro_results.jsonl --html-only
 ```
 
-Use a custom JSONL file:
+Set a custom output file/base path:
 ```bash
-pnpm generate "protein-id-here" --jsonl /path/to/interpro_results.jsonl
+pnpm generate "protein-id-here" --jsonl /path/to/interpro_results.jsonl --output /path/to/my_protein_plot
 ```
 
 List proteins from a custom JSONL file:
@@ -41,10 +41,7 @@ List proteins from a custom JSONL file:
 pnpm generate --jsonl /path/to/interpro_results.jsonl
 ```
 
-List available proteins:
-```bash
-pnpm generate
-```
+`--jsonl` is required for all runs.
 
 The generated files appear in the `output/` directory.
 
@@ -54,27 +51,27 @@ The generator is a standard Node.js ESM script (`generate-protein.mjs`), so you 
 
 Direct Node:
 ```bash
-node interpro-viz/generate-protein.mjs "protein-id-here" --jsonl /path/to/interpro_results.jsonl
+node interpro-viz/generate-protein.mjs "protein-id-here" --jsonl /path/to/interpro_results.jsonl --output /path/to/my_protein_plot
 ```
 
 npm:
 ```bash
-npm --prefix interpro-viz run generate -- "protein-id-here" --jsonl /path/to/interpro_results.jsonl
+npm --prefix interpro-viz run generate -- "protein-id-here" --jsonl /path/to/interpro_results.jsonl --output /path/to/my_protein_plot
 ```
 
 yarn:
 ```bash
-yarn --cwd interpro-viz generate "protein-id-here" --jsonl /path/to/interpro_results.jsonl
+yarn --cwd interpro-viz generate "protein-id-here" --jsonl /path/to/interpro_results.jsonl --output /path/to/my_protein_plot
 ```
 
 pnpm:
 ```bash
-pnpm --dir interpro-viz generate "protein-id-here" --jsonl /path/to/interpro_results.jsonl
+pnpm --dir interpro-viz generate "protein-id-here" --jsonl /path/to/interpro_results.jsonl --output /path/to/my_protein_plot
 ```
 
 bun:
 ```bash
-bun --cwd interpro-viz run generate "protein-id-here" --jsonl /path/to/interpro_results.jsonl
+bun --cwd interpro-viz run generate "protein-id-here" --jsonl /path/to/interpro_results.jsonl --output /path/to/my_protein_plot
 ```
 
 ## Features

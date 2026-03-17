@@ -6,7 +6,6 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const DEFAULT_JSONL_FILE = path.join(__dirname, 'endolysin_proteins.faa.jsonl');
 const OUTPUT_DIR = path.join(__dirname, 'output');
 
 const CONSERVED_RESIDUE_COLOR = '#9ccc3c';
@@ -1456,8 +1455,10 @@ function printUsage() {
   console.log('Options:');
   console.log('  --svg-only         Generate only SVG (default: generates both HTML and SVG)');
   console.log('  --html-only        Generate only HTML');
-  console.log('  --jsonl <path>     Read proteins from a custom InterProScan JSONL file');
+  console.log('  --jsonl <path>     Read proteins from an InterProScan JSONL file (required)');
   console.log('  -j <path>          Short form of --jsonl');
+  console.log('  --output <path>    Optional output file path/base name');
+  console.log('  -o <path>          Short form of --output');
 }
 
 function parseCliArgs(rawArgs) {
@@ -1465,7 +1466,8 @@ function parseCliArgs(rawArgs) {
     proteinId: null,
     svgOnly: false,
     htmlOnly: false,
-    jsonlFile: DEFAULT_JSONL_FILE,
+    jsonlFile: null,
+    outputFile: null,
   };
 
   for (let i = 0; i < rawArgs.length; i += 1) {
@@ -1498,6 +1500,25 @@ function parseCliArgs(rawArgs) {
       options.jsonlFile = path.resolve(process.cwd(), value);
       continue;
     }
+    if (arg === '--output' || arg === '-o') {
+      const value = rawArgs[i + 1];
+      if (!value || value.startsWith('-')) {
+        console.error(`Error: ${arg} requires a file path`);
+        process.exit(1);
+      }
+      options.outputFile = path.resolve(process.cwd(), value);
+      i += 1;
+      continue;
+    }
+    if (arg.startsWith('--output=')) {
+      const value = arg.slice('--output='.length).trim();
+      if (!value) {
+        console.error('Error: --output requires a file path');
+        process.exit(1);
+      }
+      options.outputFile = path.resolve(process.cwd(), value);
+      continue;
+    }
     if (arg.startsWith('-')) {
       console.error(`Error: Unknown option "${arg}"`);
       process.exit(1);
@@ -1511,6 +1532,13 @@ function parseCliArgs(rawArgs) {
     process.exit(1);
   }
 
+  if (!options.jsonlFile) {
+    console.error('Error: --jsonl <path> is required');
+    console.log('');
+    printUsage();
+    process.exit(1);
+  }
+
   return options;
 }
 
@@ -1519,6 +1547,63 @@ function ensureJsonlFileExists(jsonlFile) {
     console.error(`Error: ${jsonlFile} not found`);
     process.exit(1);
   }
+}
+
+function ensureParentDirExists(filePath) {
+  const directory = path.dirname(filePath);
+  if (!fs.existsSync(directory)) {
+    fs.mkdirSync(directory, { recursive: true });
+  }
+}
+
+function stripSupportedExtension(filePath) {
+  if (filePath.toLowerCase().endsWith('.html')) {
+    return filePath.slice(0, -5);
+  }
+  if (filePath.toLowerCase().endsWith('.svg')) {
+    return filePath.slice(0, -4);
+  }
+  return filePath;
+}
+
+function resolveOutputTargets(options, proteinId) {
+  const shouldWriteHtml = !options.svgOnly;
+  const shouldWriteSvg = !options.htmlOnly;
+  const baseName = proteinId.replace(/[\/\\?%*:|"<>]/g, '_');
+
+  if (!options.outputFile) {
+    const htmlPath = shouldWriteHtml ? path.join(OUTPUT_DIR, `${baseName}.html`) : null;
+    const svgPath = shouldWriteSvg ? path.join(OUTPUT_DIR, `${baseName}.svg`) : null;
+    return { htmlPath, svgPath };
+  }
+
+  if (shouldWriteHtml && shouldWriteSvg) {
+    const base = stripSupportedExtension(options.outputFile);
+    return {
+      htmlPath: `${base}.html`,
+      svgPath: `${base}.svg`,
+    };
+  }
+
+  if (shouldWriteHtml) {
+    if (options.outputFile.toLowerCase().endsWith('.svg')) {
+      console.error('Error: --output cannot end with .svg when using --html-only');
+      process.exit(1);
+    }
+    return {
+      htmlPath: options.outputFile.toLowerCase().endsWith('.html') ? options.outputFile : `${options.outputFile}.html`,
+      svgPath: null,
+    };
+  }
+
+  if (options.outputFile.toLowerCase().endsWith('.html')) {
+    console.error('Error: --output cannot end with .html when using --svg-only');
+    process.exit(1);
+  }
+  return {
+    htmlPath: null,
+    svgPath: options.outputFile.toLowerCase().endsWith('.svg') ? options.outputFile : `${options.outputFile}.svg`,
+  };
 }
 
 // Main CLI logic
@@ -1554,27 +1639,21 @@ function main() {
     process.exit(1);
   }
 
-  if (!fs.existsSync(OUTPUT_DIR)) {
-    fs.mkdirSync(OUTPUT_DIR, { recursive: true });
-  }
+  const outputTargets = resolveOutputTargets(options, protein.id);
 
-  const baseName = protein.id.replace(/[\/\\?%*:|"<>]/g, '_');
-
-  if (!options.svgOnly) {
+  if (outputTargets.htmlPath) {
+    ensureParentDirExists(outputTargets.htmlPath);
     const html = generateHTML(protein);
-    const htmlFilename = `${baseName}.html`;
-    const htmlFilepath = path.join(OUTPUT_DIR, htmlFilename);
-    fs.writeFileSync(htmlFilepath, html, 'utf-8');
-    console.log(`✓ Generated HTML: ${htmlFilepath}`);
-    console.log(`  Open in browser: file://${htmlFilepath}`);
+    fs.writeFileSync(outputTargets.htmlPath, html, 'utf-8');
+    console.log(`✓ Generated HTML: ${outputTargets.htmlPath}`);
+    console.log(`  Open in browser: file://${outputTargets.htmlPath}`);
   }
 
-  if (!options.htmlOnly) {
+  if (outputTargets.svgPath) {
+    ensureParentDirExists(outputTargets.svgPath);
     const svg = generateSVG(protein);
-    const svgFilename = `${baseName}.svg`;
-    const svgFilepath = path.join(OUTPUT_DIR, svgFilename);
-    fs.writeFileSync(svgFilepath, svg, 'utf-8');
-    console.log(`✓ Generated SVG: ${svgFilepath}`);
+    fs.writeFileSync(outputTargets.svgPath, svg, 'utf-8');
+    console.log(`✓ Generated SVG: ${outputTargets.svgPath}`);
     console.log('  Edit in: Adobe Illustrator, Inkscape, or any SVG editor');
   }
 }
